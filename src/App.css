@@ -1,128 +1,140 @@
-/* Contenedor padre que ocupa toda la pantalla y cambia de fondo según el clima */
+/* Configuración Base */
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Contenedor General que se pinta según el clima */
 .weather-app {
   min-height: 100vh;
-  width: 100vw;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  transition: background 0.5s ease;
-  margin: 0;
-  padding: 1rem;
+  padding: 20px;
   box-sizing: border-box;
+  transition: background 0.5s ease;
 }
 
-/* Fondos dinámicos */
-.weather-app.sunny { background: linear-gradient(135deg, #fce38a, #f38181); color: #2c3e50; }
-.weather-app.cloudy { background: linear-gradient(135deg, #ece9e6, #th857d) !important; background-color: #61707d !important; color: #fff; }
-.weather-app.rainy { background: linear-gradient(135deg, #3a7bd5, #3a6073); color: #fff; }
-.weather-app.stormy { background: linear-gradient(135deg, #141e30, #243b55); color: #fff; }
-.weather-app.snowy { background: linear-gradient(135deg, #e6f7ff, #aec1c4); color: #333; }
+/* Fondos Dinámicos Forzados */
+.weather-app.sunny { background: linear-gradient(135deg, #ffafbd, #ffc3a0) !important; } /* Tu fondo rosadito */
+.weather-app.cloudy { background: linear-gradient(135deg, #61a0a8, #b1cbbb) !important; }
+.weather-app.rainy { background: linear-gradient(135deg, #4b6cb7, #182848) !important; }
+.weather-app.stormy { background: linear-gradient(135deg, #1f1c2c, #928dab) !important; }
 
-/* Tarjeta principal (Responsive) */
+/* Tarjeta Blanca donde va la info (Para que resalte sobre el rosa) */
 .weather-container {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  padding: 2rem;
-  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  box-sizing: border-box;
   text-align: center;
+  box-sizing: border-box;
 }
 
+/* Título de la App (Forzado a color oscuro) */
 .weather-container h2 {
+  color: #222222 !important;
   margin-top: 0;
-  margin-bottom: 1.5rem;
-  font-size: 1.6rem;
+  margin-bottom: 20px;
+  font-size: 24px;
 }
 
 /* Buscador */
 .search-form {
   display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
+  gap: 10px;
+  margin-bottom: 20px;
 }
 
 .search-form input {
   flex: 1;
-  padding: 0.75rem;
-  border: none;
+  padding: 12px;
+  border: 2px solid #ccc;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
   color: #333;
-  font-size: 1rem;
-  outline: none;
+  background-color: #fff;
 }
 
 .search-form button {
-  padding: 0.75rem 1.2rem;
+  padding: 12px 20px;
+  background-color: #007bff;
+  color: white;
   border: none;
   border-radius: 8px;
-  background-color: #333;
-  color: #fff;
-  font-weight: bold;
+  font-size: 16px;
   cursor: pointer;
+  font-weight: bold;
 }
 
-/* Info del Clima */
+.search-form button:hover {
+  background-color: #0056b3;
+}
+
+/* Mensajes de Carga y Error */
+.spinner {
+  color: #555;
+  font-weight: bold;
+  margin: 20px 0;
+}
+
+.error-message {
+  color: #d9534f;
+  background: #fdf7f7;
+  padding: 10px;
+  border-radius: 5px;
+  margin: 15px 0;
+  border: 1px solid #d9534f;
+}
+
+/* Bloque de Información del Clima */
+.weather-info {
+  margin-top: 20px;
+  color: #333;
+}
+
 .location {
-  font-size: 1.4rem;
-  margin-bottom: 0.5rem;
+  font-size: 22px;
+  color: #111;
+  margin-bottom: 10px;
 }
 
 .weather-main {
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin: 1rem 0;
+  align-items: center;
+  gap: 15px;
+  margin: 15px 0;
 }
 
-.emoji-display {
-  font-size: 3.5rem;
+.weather-icon {
+  width: 64px;
+  height: 64px;
 }
 
 .temperature {
-  font-size: 3.5rem;
+  font-size: 48px;
   font-weight: bold;
+  color: #111;
 }
 
 .status-text {
-  font-size: 1.2rem;
+  font-size: 18px;
   text-transform: capitalize;
-  margin-top: 0;
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 15px;
 }
 
 .weather-details {
-  background: rgba(0, 0, 0, 0.1);
-  padding: 0.75rem;
+  background: #f8f9fa;
+  padding: 12px;
   border-radius: 8px;
-  font-size: 0.95rem;
-  display: flex;
-  justify-content: center;
-}
-
-/* Mensajes de carga y error */
-.spinner {
-  margin: 2rem 0;
-  font-weight: bold;
-  animation: pulse 1.5s infinite ease-in-out;
-}
-
-.error-message {
-  background: rgba(255, 0, 0, 0.2);
-  padding: 0.75rem;
-  border-radius: 8px;
-  margin-bottom: 1rem;
-  font-size: 0.9rem;
-}
-
-@keyframes pulse {
-  0% { opacity: 0.6; }
-  50% { opacity: 1; }
-  100% { opacity: 0.6; }
+  font-size: 16px;
+  color: #444;
 }
