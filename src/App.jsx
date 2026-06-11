@@ -59,7 +59,7 @@ function App() {
           fetchWeather(`${latitude},${longitude}`, true);
         },
         (err) => {
-          console.log("Geolocalización rechazada, cargando ciudad por defecto.");
+          console.log("Geolocalización rechazada o lenta, cargando Buenos Aires por defecto.");
           fetchWeather("Buenos Aires");
         },
         { timeout: 8000 }
@@ -80,7 +80,8 @@ function App() {
     return 'sunny';
   };
 
-  const bgClass = weather ? getWeatherClass(weather.code) : 'sunny';
+  // CORRECCIÓN CLAVE: Protección segura si weather es null al arrancar
+  const bgClass = weather && weather.code ? getWeatherClass(weather.code) : 'sunny';
 
   return (
     <div className={`weather-app ${bgClass}`}>
