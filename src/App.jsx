@@ -3,25 +3,26 @@ import './App.css';
 
 function App() {
   const [weather, setWeather] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Arranca en false para que no congele
   const [error, setError] = useState(null);
   const [cityInput, setCityInput] = useState('');
   const [locationName, setLocationName] = useState('');
 
-  // Clave pública de respaldo para WeatherAPI
   const API_KEY = "69c737976e1948dfbfb130008242205";
 
-  // 1. FUNCIÓN PRINCIPAL: Buscar clima por texto (Ciudad) o Coordenadas
-  const fetchWeather = async (query, isCoords = false) => {
+  // FUNCIÓN CENTRAL: Recibe el texto directo que queremos buscar ("Madrid", "Buenos Aires" o "lat,lon")
+  const buscarClimaDelLugar = async (lugar) => {
+    if (!lugar) return;
     setLoading(true);
     setError(null);
+    
     try {
-      // WeatherAPI acepta tanto "Latitud,Longitud" como "Nombre de ciudad" en el mismo parámetro 'q'
-      const response = await fetch(
-        `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${query}&lang=es`
-      );
+      const url = `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${encodeURIComponent(lugar)}&lang=es`;
+      const response = await fetch(url);
       
-      if (!response.ok) throw new Error("No se pudo obtener el clima de este lugar.");
+      if (!response.ok) {
+        throw new Error("No pudimos encontrar ese lugar. Probá escribiendo otra ciudad.");
+      }
       
       const data = await response.json();
       
@@ -42,37 +43,36 @@ function App() {
     }
   };
 
-  // 2. FUNCIÓN: Manejar el buscador manual
-  const searchCity = (e) => {
+  // Manejador del Formulario (El botón Buscar)
+  const manejarBuscador = (e) => {
     e.preventDefault();
-    if (!cityInput.trim()) return;
-    fetchWeather(cityInput);
-    setCityInput('');
+    if (cityInput.trim() === '') return;
+    buscarClimaDelLugar(cityInput);
+    setCityInput(''); // Limpia el cuadro de texto
   };
 
-  // 3. EFECTO INICIAL: Intentar geolocalizar al usuario
+  // Al arrancar la app por primera vez
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
-          fetchWeather(`${latitude},${longitude}`, true);
+          buscarClimaDelLugar(`${latitude},${longitude}`);
         },
         (err) => {
-          console.log("Geolocalización rechazada o lenta, cargando Buenos Aires por defecto.");
-          fetchWeather("Buenos Aires");
+          // Si el usuario rechaza el GPS, cargamos Buenos Aires de una
+          buscarClimaDelLugar("Buenos Aires");
         },
-        { timeout: 8000 }
+        { timeout: 5000 }
       );
     } else {
-      fetchWeather("Buenos Aires");
+      buscarClimaDelLugar("Buenos Aires");
     }
   }, []);
 
-  // 4. FUNCIÓN AUXILIAR: Asignar clase de diseño según el clima
+  // Cambiador de fondos de clima
   const getWeatherClass = (code) => {
     if (!code) return 'sunny';
-    // Códigos de WeatherAPI
     if (code === 1000) return 'sunny';
     if ([1003, 1006, 1009].includes(code)) return 'cloudy';
     if ([1063, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) return 'rainy';
@@ -80,7 +80,6 @@ function App() {
     return 'sunny';
   };
 
-  // CORRECCIÓN CLAVE: Protección segura si weather es null al arrancar
   const bgClass = weather && weather.code ? getWeatherClass(weather.code) : 'sunny';
 
   return (
@@ -88,7 +87,8 @@ function App() {
       <div className="weather-container">
         <h2>🌦️ Clima Inteligente</h2>
 
-        <form onSubmit={searchCity} className="search-form">
+        {/* Formulario conectado a manejarBuscador */}
+        <form onSubmit={manejarBuscador} className="search-form">
           <input
             type="text"
             placeholder="Buscar otra ciudad... (ej: Madrid)"
@@ -98,10 +98,11 @@ function App() {
           <button type="submit">Buscar</button>
         </form>
 
-        {loading && <div className="spinner">Cargando datos del cielo... 🌍</div>}
+        {loading && <div className="spinner">Buscando en el mapa... 🌍</div>}
 
         {error && <div className="error-message">⚠️ {error}</div>}
 
+        {/* Solo se muestra si NO está cargando y hay datos de clima */}
         {!loading && weather && (
           <div className="weather-info">
             <h3 className="location">{locationName}</h3>
