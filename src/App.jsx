@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
-function ClimaApp() {
+function App() {
   const [weather, setWeather] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [cityInput, setCityInput] = useState('');
   const [locationName, setLocationName] = useState('');
 
-  // 1. FUNCIÓN PRINCIPAL: Obtener clima por coordenadas (Latitud y Longitud)
-const fetchWeatherByCoords = async (lat, lon, name = "Tu ubicación") => {
+  // Clave pública de respaldo para WeatherAPI
+  const API_KEY = "69c737976e1948dfbfb130008242205";
+
+  // 1. FUNCIÓN PRINCIPAL: Buscar clima por texto (Ciudad) o Coordenadas
+  const fetchWeather = async (query, isCoords = false) => {
     setLoading(true);
     setError(null);
     try {
-      // URL corregida con parámetros limpios
+      // WeatherAPI acepta tanto "Latitud,Longitud" como "Nombre de ciudad" en el mismo parámetro 'q'
       const response = await fetch(
-        `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=true`
+        `https://api.weatherapi.com/v1/current.json?key=${API_KEY}&q=${query}&lang=es`
       );
-      if (!response.ok) throw new Error("No se pudo conectar con el servidor del clima.");
+      
+      if (!response.ok) throw new Error("No se pudo obtener el clima de este lugar.");
       
       const data = await response.json();
       
-      if (!data.current_weather) throw new Error("Datos de clima no disponibles para esta zona.");
-
-      setWeather(data.current_weather);
-      setLocationName(name);
+      setWeather({
+        temp: data.current.temp_c,
+        conditionText: data.current.condition.text,
+        icon: data.current.condition.icon,
+        wind: data.current.wind_kph,
+        code: data.current.condition.code
+      });
+      
+      setLocationName(`${data.location.name}, ${data.location.country}`);
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -33,70 +42,48 @@ const fetchWeatherByCoords = async (lat, lon, name = "Tu ubicación") => {
     }
   };
 
-  // 2. FUNCIÓN: Buscar coordenadas de una ciudad escrita a mano (Geocoding)
-  const searchCity = async (e) => {
+  // 2. FUNCIÓN: Manejar el buscador manual
+  const searchCity = (e) => {
     e.preventDefault();
     if (!cityInput.trim()) return;
-
-    setLoading(true);
-    setError(null);
-    try {
-      const geocodeRes = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityInput)}&count=1&language=es`
-      );
-      const geocodeData = await geocodeRes.json();
-
-      if (!geocodeData.results || geocodeData.results.length === 0) {
-        throw new Error("Ciudad no encontrada. Probá escribiéndola de otra forma.");
-      }
-
-      const { latitude, longitude, name, country } = geocodeData.results[0];
-      await fetchWeatherByCoords(latitude, longitude, `${name}, ${country}`);
-      setCityInput('');
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
+    fetchWeather(cityInput);
+    setCityInput('');
   };
 
-  // 3. EFECTO INICIAL: Intentar geolocalizar al usuario apenas abre la app
+  // 3. EFECTO INICIAL: Intentar geolocalizar al usuario
   useEffect(() => {
     if ("geolocation" in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          // El usuario aceptó el permiso, usamos sus coordenadas exactas
           const { latitude, longitude } = position.coords;
-          fetchWeatherByCoords(latitude, longitude, "Tu ubicación actual");
+          fetchWeather(`${latitude},${longitude}`, true);
         },
         (err) => {
-          console.log("Geolocalización rechazada o fallida, cargando ciudad por defecto.", err);
-          // Si rechaza el permiso o falla, cargamos una por defecto (ej: Buenos Aires)
-          fetchWeatherByCoords(-34.61315, -58.37723, "Buenos Aires, Argentina");
+          console.log("Geolocalización rechazada, cargando ciudad por defecto.");
+          fetchWeather("Buenos Aires");
         },
-        { timeout: 10000 }
+        { timeout: 8000 }
       );
     } else {
-      // Navegador viejo sin geolocalización
-      fetchWeatherByCoords(-34.61315, -58.37723, "Buenos Aires, Argentina");
+      fetchWeather("Buenos Aires");
     }
   }, []);
 
-  // 4. FUNCIÓN AUXILIAR: Traducir los códigos de clima de Open-Meteo a texto y emojis
-  const getWeatherStatus = (code) => {
-    // Códigos estándar WMO (Organización Meteorológica Mundial)
-    if (code === 0) return { text: "Despejado", emoji: "☀️", class: "sunny" };
-    if ([1, 2, 3].includes(code)) return { text: "Parcialmente Nublado", emoji: "⛅", class: "cloudy" };
-    if ([45, 48].includes(code)) return { text: "Niebla", emoji: "🌫️", class: "cloudy" };
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { text: "Lluvia", emoji: "🌧️", class: "rainy" };
-    if ([71, 73, 75, 77, 85, 86].includes(code)) return { text: "Nieve", emoji: "❄️", class: "snowy" };
-    if ([95, 96, 99].includes(code)) return { text: "Tormenta", emoji: "⛈️", class: "stormy" };
-    return { text: "Desconocido", emoji: "🌍", class: "sunny" };
+  // 4. FUNCIÓN AUXILIAR: Asignar clase de diseño según el clima
+  const getWeatherClass = (code) => {
+    if (!code) return 'sunny';
+    // Códigos de WeatherAPI
+    if (code === 1000) return 'sunny';
+    if ([1003, 1006, 1009].includes(code)) return 'cloudy';
+    if ([1063, 1180, 1183, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) return 'rainy';
+    if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 'stormy';
+    return 'sunny';
   };
 
-  const status = weather ? getWeatherStatus(weather.weathercode) : { text: "", emoji: "", class: "sunny" };
+  const bgClass = weather ? getWeatherClass(weather.code) : 'sunny';
 
   return (
-    <div className={`weather-app ${status.class}`}>
+    <div className={`weather-app ${bgClass}`}>
       <div className="weather-container">
         <h2>🌦️ Clima Inteligente</h2>
 
@@ -118,12 +105,12 @@ const fetchWeatherByCoords = async (lat, lon, name = "Tu ubicación") => {
           <div className="weather-info">
             <h3 className="location">{locationName}</h3>
             <div className="weather-main">
-              <span className="emoji-display">{status.emoji}</span>
-              <span className="temperature">{Math.round(weather.temperature)}°C</span>
+              <img src={weather.icon} alt={weather.conditionText} className="weather-icon" />
+              <span className="temperature">{Math.round(weather.temp)}°C</span>
             </div>
-            <p className="status-text">{status.text}</p>
+            <p className="status-text">{weather.conditionText}</p>
             <div className="weather-details">
-              <div>💨 Viento: {weather.windspeed} km/h</div>
+              <div>💨 Viento: {weather.wind} km/h</div>
             </div>
           </div>
         )}
@@ -132,4 +119,4 @@ const fetchWeatherByCoords = async (lat, lon, name = "Tu ubicación") => {
   );
 }
 
-export default ClimaApp;
+export default App;
