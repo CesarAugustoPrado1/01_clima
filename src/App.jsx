@@ -8,7 +8,7 @@ function App() {
   const [cityInput, setCityInput] = useState('');
   const [locationName, setLocationName] = useState('');
 
-  const API_KEY = "69c737976e1948dfbfb130008242205";
+  const API_KEY = "bfcae49525e84502857130759261206";
 
   // FUNCIÓN CENTRAL: Recibe el texto directo que queremos buscar ("Madrid", "Buenos Aires" o "lat,lon")
   const buscarClimaDelLugar = async (lugar) => {
